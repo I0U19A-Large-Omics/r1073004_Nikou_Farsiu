@@ -1,0 +1,56 @@
+DB = "/staging/leuven/stg_00079/teaching/hg38_9/chr9.fa"
+SNPEFF_JAR = "/lustre1/project/stg_00079/teaching/I0U19a_conda_2026/share/snpeff-5.4.0a-0/snpEff.jar"
+SAMPLES = ["TLE66_N", "TLE66_T"]
+
+rule all:
+    input:
+        "100.final/snps.annotated.tsv"
+
+rule fastqc:
+    input:
+        "{sample}.fastq"
+    output:
+        "010.fastqc/{sample}_fastqc.html"
+    shell:
+        "mkdir -p 010.fastqc && fastqc {input} -o 010.fastqc"
+
+rule align:
+    input:
+        "{sample}.fastq"
+    output:
+        bam="020.aligned/{sample}.bam",
+        bai="020.aligned/{sample}.bam.bai"
+    shell:
+        "mkdir -p 020.aligned && bwa mem {DB} {input} | samtools sort -o {output.bam} - && samtools index {output.bam}"
+
+rule call_snps:
+    input:
+        expand("020.aligned/{sample}.bam", sample=SAMPLES)
+    output:
+        "030.snps/raw_snps.vcf"
+    shell:
+        "mkdir -p 030.snps && bcftools mpileup -Ou -f {DB} {input} | bcftools call -mv -Ov -o {output}"
+
+rule filter_snps:
+    input:
+        "030.snps/raw_snps.vcf"
+    output:
+        "040.filtered/clean_snps.vcf"
+    shell:
+        "mkdir -p 040.filtered && cat {input} | vt decompose - | vt normalize -n -r {DB} - | vt uniq - | vt view -f 'QUAL>20' -h - > {output}"
+
+rule annotate_snps:
+    input:
+        "040.filtered/clean_snps.vcf"
+    output:
+        "050.annotated/annotated_snps.vcf"
+    shell:
+        "mkdir -p 050.annotated && java -Xmx3400m -jar {SNPEFF_JAR} eff hg19 -dataDir /staging/leuven/stg_00079/teaching/snpeff_db {input} > {output}"
+
+rule make_tsv:
+    input:
+        "050.annotated/annotated_snps.vcf"
+    output:
+        "100.final/snps.annotated.tsv"
+    shell:
+        "mkdir -p 100.final && grep -v '^#' {input} | awk '{{print $1\"\\t\"$2\"\\t\"$4\"\\t\"$5\"\\t\"$6\"\\t\"$8}}' > {output}"

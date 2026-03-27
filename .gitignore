@@ -1,0 +1,5 @@
+*.fastq
+*.bam
+*.bai
+*.vcf
+*.tsv
