@@ -11,7 +11,8 @@ rule fastqc:
     input:
         "{sample}.fastq"
     output:
-        "010.fastqc/{sample}_fastqc.html"
+        html="010.fastqc/{sample}_fastqc.html"
+        zip="010.fastqc/{sample}_fastqc.zip"
     shell:
         "mkdir -p 010.fastqc && fastqc {input} -o 010.fastqc"
 
