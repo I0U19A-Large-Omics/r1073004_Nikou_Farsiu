@@ -37,3 +37,14 @@ It contains the SNPs found between the tumor and normal sample with annotations.
 - 040.filtered/ has the filtered snps
 - 050.annotated/ has the annotated snps
 - 100.final/ has the final output file
+
+## Sanity checks
+Every rule in this workflow has a sanity check built into the shell command. This means after each step finishes, it automatically verifies that the output makes sense before moving on to the next step. If any check fails, snakemake will stop immediately and report an error so you know exactly which step went wrong.
+
+fastqc: checks the html report file is not empty
+align: runs samtools quickcheck to validate the bam file is not corrupted
+index: checks the index file is not empty
+call_snps: checks the vcf file has the correct #CHROM header line
+filter_snps: prints how many snps survived filtering so you can check the number looks reasonable
+annotate_snps: checks that ANN= annotation tags are present in the output
+make_tsv: checks the final output file is not empty
