@@ -15,16 +15,21 @@ rule fastqc:
         zip="010.fastqc/{sample}_fastqc.zip"
     shell:
         "mkdir -p 010.fastqc && fastqc {input} -o 010.fastqc"
-
 rule align:
     input:
         "{sample}.fastq"
     output:
-        bam="020.aligned/{sample}.bam",
-        bai="020.aligned/{sample}.bam.bai"
+        "020.aligned/{sample}.bam"
     shell:
-        "mkdir -p 020.aligned && bwa mem {DB} {input} | samtools sort -o {output.bam} - && samtools index {output.bam}"
+        "mkdir -p 020.aligned && bwa mem {DB} {input} | samtools sort -o {output} -"
 
+rule index:
+    input:
+        "020.aligned/{sample}.bam"
+    output:
+        "020.aligned/{sample}.bam.bai"
+    shell:
+        "samtools index {input}"
 rule call_snps:
     input:
         bams=expand("020.aligned/{sample}.bam", sample=SAMPLES)
