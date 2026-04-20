@@ -11,17 +11,18 @@ rule fastqc:
     input:
         "{sample}.fastq"
     output:
-        html="010.fastqc/{sample}_fastqc.html"
+        html="010.fastqc/{sample}_fastqc.html",
         zip="010.fastqc/{sample}_fastqc.zip"
     shell:
-        "mkdir -p 010.fastqc && fastqc {input} -o 010.fastqc"
+        "mkdir -p 010.fastqc && fastqc {input} -o 010.fastqc && test -s {output.html}"
+
 rule align:
     input:
         "{sample}.fastq"
     output:
         "020.aligned/{sample}.bam"
     shell:
-        "mkdir -p 020.aligned && bwa mem {DB} {input} | samtools sort -o {output} -"
+        "mkdir -p 020.aligned && bwa mem {DB} {input} | samtools sort -o {output} - && samtools quickcheck {output}"
 
 rule index:
     input:
@@ -29,24 +30,24 @@ rule index:
     output:
         "020.aligned/{sample}.bam.bai"
     shell:
-        "samtools index {input}"
+        "samtools index {input} && test -s {output}"
+
 rule call_snps:
     input:
-        bams=expand("020.aligned/{sample}.bam", sample=SAMPLES)
+        bams=expand("020.aligned/{sample}.bam", sample=SAMPLES),
         bais=expand("020.aligned/{sample}.bam.bai", sample=SAMPLES)
     output:
         "030.snps/raw_snps.vcf"
     shell:
-        "mkdir -p 030.snps && bcftools mpileup -Ou -f {DB} {input.bams} | bcftools call -mv -Ov -o {output}"
+        "mkdir -p 030.snps && bcftools mpileup -Ou -f {DB} {input.bams} | bcftools call -mv -Ov -o {output} && grep -q '^#CHROM' {output}"
 
-        
 rule filter_snps:
     input:
         "030.snps/raw_snps.vcf"
     output:
         "040.filtered/clean_snps.vcf"
     shell:
-        "mkdir -p 040.filtered && cat {input} | vt decompose - | vt normalize -n -r {DB} - | vt uniq - | vt view -f 'QUAL>20' -h - > {output}"
+        "mkdir -p 040.filtered && cat {input} | vt decompose - | vt normalize -n -r {DB} - | vt uniq - | vt view -f 'QUAL>20' -h - > {output} && grep -v '^#' {output} | wc -l"
 
 rule annotate_snps:
     input:
@@ -54,7 +55,7 @@ rule annotate_snps:
     output:
         "050.annotated/annotated_snps.vcf"
     shell:
-        "mkdir -p 050.annotated && java -Xmx3400m -jar {SNPEFF_JAR} eff hg38 -dataDir /staging/leuven/stg_00079/teaching/snpeff_db {input} > {output}"
+        "mkdir -p 050.annotated && java -Xmx3400m -jar {SNPEFF_JAR} eff hg38 -dataDir /staging/leuven/stg_00079/teaching/snpeff_db {input} > {output} && grep -q 'ANN=' {output}"
 
 rule make_tsv:
     input:
@@ -62,4 +63,4 @@ rule make_tsv:
     output:
         "100.final/snps.annotated.tsv"
     shell:
-        "mkdir -p 100.final && grep -v '^#' {input} | awk '{{print $1\"\\t\"$2\"\\t\"$4\"\\t\"$5\"\\t\"$6\"\\t\"$8}}' > {output}"
+        "mkdir -p 100.final && grep -v '^#' {input} | awk '{{print $1\"\\t\"$2\"\\t\"$4\"\\t\"$5\"\\t\"$6\"\\t\"$8}}' > {output} && test -s {output}"
