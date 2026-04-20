@@ -46,7 +46,7 @@ rule annotate_snps:
     output:
         "050.annotated/annotated_snps.vcf"
     shell:
-        "mkdir -p 050.annotated && java -Xmx3400m -jar {SNPEFF_JAR} eff hg19 -dataDir /staging/leuven/stg_00079/teaching/snpeff_db {input} > {output}"
+        "mkdir -p 050.annotated && java -Xmx3400m -jar {SNPEFF_JAR} eff hg38 -dataDir /staging/leuven/stg_00079/teaching/snpeff_db {input} > {output}"
 
 rule make_tsv:
     input:
