@@ -4,7 +4,8 @@ SAMPLES = ["TLE66_N", "TLE66_T"]
 
 rule all:
     input:
-        "100.final/snps.annotated.tsv"
+        "100.final/snps.annotated.tsv",
+        expand("010.fastqc/{sample}_fastqc.html", sample=SAMPLES)
 
 rule fastqc:
     input:
