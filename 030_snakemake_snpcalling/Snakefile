@@ -26,12 +26,14 @@ rule align:
 
 rule call_snps:
     input:
-        expand("020.aligned/{sample}.bam", sample=SAMPLES)
+        bams=expand("020.aligned/{sample}.bam", sample=SAMPLES)
+        bais=expand("020.aligned/{sample}.bam.bai", sample=SAMPLES)
     output:
         "030.snps/raw_snps.vcf"
     shell:
-        "mkdir -p 030.snps && bcftools mpileup -Ou -f {DB} {input} | bcftools call -mv -Ov -o {output}"
+        "mkdir -p 030.snps && bcftools mpileup -Ou -f {DB} {input.bams} | bcftools call -mv -Ov -o {output}"
 
+        
 rule filter_snps:
     input:
         "030.snps/raw_snps.vcf"
