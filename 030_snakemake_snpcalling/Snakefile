@@ -5,7 +5,8 @@ SAMPLES = ["TLE66_N", "TLE66_T"]
 rule all:
     input:
         "100.final/snps.annotated.tsv",
-        expand("010.fastqc/{sample}_fastqc.html", sample=SAMPLES)
+        expand("010.fastqc/{sample}_fastqc.html", sample=SAMPLES),
+        "150.db/snps.sqlite"
 
 rule fastqc:
     input:
@@ -64,3 +65,17 @@ rule make_tsv:
         "100.final/snps.annotated.tsv"
     shell:
         "mkdir -p 100.final && grep -v '^#' {input} | awk '{{print $1\"\\t\"$2\"\\t\"$4\"\\t\"$5\"\\t\"$6\"\\t\"$8}}' > {output} && test -s {output}"
+
+rule load_db:
+    input:
+        "050.annotated/annotated_snps.vcf"
+    output:
+        "150.db/snps.sqlite"
+    shell:
+        """
+        mkdir -p 150.db
+        python /user/leuven/381/vsc38197/r1073004_Nikou_Farsiu/030_snakemake_snpcalling/vcf_to_db.py {input} {output}
+        sqlite3 {output} "SELECT COUNT(*) FROM SNP;" | grep -v "^0$"
+        sqlite3 {output} "SELECT COUNT(*) FROM Effect WHERE gene != '';" | grep -v "^0$"
+        sqlite3 {output} "SELECT COUNT(*) FROM Call WHERE genotype != './.'" | grep -v "^0$"
+        """
