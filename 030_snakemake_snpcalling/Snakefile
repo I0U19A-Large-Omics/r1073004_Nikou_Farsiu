@@ -6,7 +6,9 @@ rule all:
     input:
         "100.final/snps.annotated.tsv",
         expand("010.fastqc/{sample}_fastqc.html", sample=SAMPLES),
-        "150.db/snps.sqlite"
+        "150.db/snps.sqlite",
+        "160.figures/fig1_impact_severity.svg",
+        "160.figures/fig2_shared_vs_unique.svg"
 
 rule fastqc:
     input:
@@ -76,4 +78,17 @@ rule load_db:
         mkdir -p 150.db
         python /user/leuven/381/vsc38197/r1073004_Nikou_Farsiu/030_snakemake_snpcalling/vcf_to_db.py {input} {output}
         python /user/leuven/381/vsc38197/r1073004_Nikou_Farsiu/030_snakemake_snpcalling/test_db.py {output}
+        """
+        rule visualize:
+    input:
+        "150.db/snps.sqlite"
+    output:
+        fig1="160.figures/fig1_impact_severity.svg",
+        fig2="160.figures/fig2_shared_vs_unique.svg"
+    shell:
+        """
+        mkdir -p 160.figures
+        python /user/leuven/381/vsc38197/r1073004_Nikou_Farsiu/030_snakemake_snpcalling/visualize.py {input} 160.figures
+        test -s {output.fig1}
+        test -s {output.fig2}
         """
