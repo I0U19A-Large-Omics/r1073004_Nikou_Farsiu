@@ -61,7 +61,7 @@ for record in reader:
         genotype = call.data.get("GT", "./.")
         call_rows.append({
             "snp_id": snp_id,
-            "sample": call.sample,
+            "sample": call.sample.replace("020.aligned/", "").replace(".bam", ""),
             "genotype": genotype
         })
 
