@@ -79,7 +79,7 @@ rule load_db:
         python /user/leuven/381/vsc38197/r1073004_Nikou_Farsiu/030_snakemake_snpcalling/vcf_to_db.py {input} {output}
         python /user/leuven/381/vsc38197/r1073004_Nikou_Farsiu/030_snakemake_snpcalling/test_db.py {output}
         """
-        rule visualize:
+rule visualize:
     input:
         "150.db/snps.sqlite"
     output:
